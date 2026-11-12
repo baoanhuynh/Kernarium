@@ -9,11 +9,14 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Build Xcode Project
         run: |
-          xcodebuild -project Andarium/Andarium.xcodeproj \
-            -scheme Andarium \
+          SCHEME=$(xcodebuild -list -project Andarium.xcodeproj | awk '/Schemes:/{getline; print $1}')
+          xcodebuild -project Andarium.xcodeproj \
+            -scheme "$SCHEME" \
             -configuration Release \
             -sdk iphoneos \
             -derivedDataPath build \
@@ -24,7 +27,8 @@ jobs:
       - name: Package IPA
         run: |
           mkdir -p Payload
-          cp -r build/Build/Products/Release-iphoneos/Andarium.app Payload/
+          APP_PATH=$(find build/Build/Products/Release-iphoneos -name "*.app" | head -n 1)
+          cp -r "$APP_PATH" Payload/
           zip -r Andarium.ipa Payload
 
       - name: Upload IPA
